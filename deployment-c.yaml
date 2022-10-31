@@ -1,0 +1,56 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-c
+  namespace: atest1
+spec:
+  selector:
+    matchLabels:
+      app: service-c
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: service-c
+        version: v1
+    spec:
+      containers:
+        - name: service-c
+          image: nicholasjackson/fake-service:v0.7.1
+          env:
+            - name: NAME
+              value: SERVICE-C
+            - name: MESSAGE
+              value: service-c
+            - name: SERVER_TYPE
+              value: http
+            - name: TRACING_ZIPKIN
+              value: http://10.217.4.191:9411
+          ports:
+            - containerPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-c-service
+  namespace: atest1
+spec:
+  selector:
+    app: service-c
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: service-c
+  namespace: atest1
+spec:
+  to:
+    kind: Service
+    name: service-c-service
+  port:
+    targetPort: 9090
